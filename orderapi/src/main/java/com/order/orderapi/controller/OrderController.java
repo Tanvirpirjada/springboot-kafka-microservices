@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-@RestController("order")
+@RestController
 public class OrderController {
 
     private final OrderService orderService;
@@ -19,7 +19,7 @@ public class OrderController {
         this.orderService = orderService;
     }
 
-    @PostMapping("create/order")
+    @PostMapping("order/create")
     public ResponseEntity<String> createOrder(@RequestBody OrderModel model){
         orderService.createOrder(model);
         return null;
