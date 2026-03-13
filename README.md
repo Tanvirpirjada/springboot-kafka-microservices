@@ -1,139 +1,166 @@
-# Kafka Microservices Order Processing System
+# Event-Driven Order Processing System
 
-## Project Overview
-This project demonstrates an event-driven microservices architecture using Spring Boot and Apache Kafka.
+A production-grade microservices architecture built with **Spring Boot** and **Apache Kafka**, featuring secure authentication, API Gateway routing, and fully asynchronous inter-service communication.
 
-The system simulates an Order Processing workflow where services communicate asynchronously through Kafka topics.
-
-## Services
-
-### Order Service
-Creates orders and publishes events to Kafka.
-
-### Inventory Service
-Consumes order events and checks product availability.
-
-### Notification Service
-Receives inventory results and sends notifications.
+---
 
 ## Architecture
 
-Order Service → Kafka → Inventory Service → Kafka → Notification Service
+```
+Client → API Gateway → Auth Service (JWT)
+                     → Order Service → Kafka → Inventory Service → Kafka → Notification Service
+```
+
+All downstream service communication is **asynchronous via Kafka**. The API Gateway handles all incoming requests and enforces JWT-based authentication before routing.
+
+---
+
+## Services
+
+### 🔐 Auth Service *(New)*
+Handles user registration and login. Returns a signed JWT access token on successful authentication.
+
+**Endpoints:**
+- `POST /auth/signup` — Register a new user
+- `POST /auth/login` — Authenticate and receive access token
+
+**JWT Token contains:**
+- `userId`
+- `email`
+- `userType`
+
+### 🚦 API Gateway
+Centralized entry point for all client requests. Validates JWT tokens and routes traffic to the appropriate downstream microservice.
+
+### 📦 Order Service
+Accepts authenticated order requests and publishes order events to Kafka.
+
+### 🏭 Inventory Service
+Consumes order events from Kafka and checks product availability. Publishes result events back to Kafka.
+
+### 🔔 Notification Service
+Consumes inventory result events and sends notifications based on order outcome.
+
+---
 
 ## Tech Stack
 
-- Java
-- Spring Boot
-- Apache Kafka
-- MySQL
-- Maven
-- REST APIs
-- Lombok
+- **Java & Spring Boot** — Core framework
+- **Apache Kafka** — Async event-driven communication
+- **Spring Security + JWT** — Authentication & authorization
+- **API Gateway** — Centralized routing and security
+- **MySQL** — Persistent storage
+- **Docker** — Containerization
+- **Maven** — Build tool
+- **Lombok** — Boilerplate reduction
+- **REST APIs** — Synchronous client-facing endpoints
+
+---
 
 ## Kafka Topics
 
-| Topic | Description |
-|------|-------------|
-| order-topic | Order created events |
-| inventory-confirmed | Inventory available |
-| inventory-failed | Inventory unavailable |
+| Topic | Producer | Consumer | Description |
+|-------|----------|----------|-------------|
+| `order-topic` | Order Service | Inventory Service | New order created |
+| `inventory-confirmed` | Inventory Service | Notification Service | Stock available |
+| `inventory-failed` | Inventory Service | Notification Service | Stock unavailable |
+
+---
 
 ## Project Structure
 
 ```
-kafka-microservices-project
+springboot-kafka-microservices
 │
+├── auth-service
+├── api-gateway
 ├── order-service
 ├── inventory-service
 ├── notification-service
 └── README.md
 ```
 
+---
+
 ## Running the Project
 
-1. Start Kafka and kraft (this is in new kafka version if you are using old one then u have zookeper for that)
-2. Start Inventory Service
-3. Start Notification Service
-4. Start Order Service
+1. Start Kafka (KRaft mode for newer Kafka versions, ZooKeeper for older)
+2. Start **Auth Service**
+3. Start **API Gateway**
+4. Start **Inventory Service**
+5. Start **Notification Service**
+6. Start **Order Service**
 
-## Example API Request
+---
 
-POST /create/orders
+## API Reference
 
+### Sign Up
 ```
+POST /auth/signup
+
 {
-    "userId":1,
-    "productId":1,
-    "productName":"Laptop",
-    "quantity":10,
-    "price":"200000"
+  "email": "tanvir@example.com",
+  "password": "securepassword",
+  "userType": "CUSTOMER"
 }
 ```
 
+### Login
+```
+POST /auth/login
 
-## 🚧 Future Improvements
+{
+  "email": "tanvir@example.com",
+  "password": "securepassword"
+}
 
-The following enhancements are planned to extend the system into a more production-ready microservices architecture.
+Response:
+{
+  "accessToken": "eyJhbGciOiJIUzI1NiJ9...",
+  "userId": 1,
+  "email": "tanvir@example.com",
+  "userType": "CUSTOMER"
+}
+```
 
-### 1. Payment Service
-A dedicated **Payment Microservice** will be added to handle payment processing.
+### Create Order *(requires Bearer token)*
+```
+POST /create/orders
+Authorization: Bearer <accessToken>
 
-Responsibilities:
-- Payment authorization
-- Payment status events
-- Integration with order workflow
+{
+  "userId": 1,
+  "productId": 1,
+  "productName": "Laptop",
+  "quantity": 10,
+  "price": "200000"
+}
+```
 
-Flow:
+---
 
+## 🚧 Planned Improvements
+
+### Payment Service
+A dedicated payment microservice to handle payment authorization and integrate into the order workflow.
+
+**Planned flow:**
 Order Service → Payment Service → Inventory Service → Notification Service
 
----
+### UI Frontend
+A frontend application for order creation, status tracking, inventory display, and notification updates — communicating via the API Gateway.
 
-### 2. API Gateway & Authentication
-
-The system will be extended with:
-
-- **API Gateway** for centralized routing
-- **Authentication Service** for secure access
-
-Planned architecture:
-
-Client → API Gateway → Microservices
-
-Features:
-- JWT based authentication
-- Request routing
-- Rate limiting
-- Centralized security
+### Additional Enhancements
+- Kafka monitoring dashboard
+- Distributed logging (ELK stack)
+- Circuit breaker pattern (Resilience4j)
+- Centralized configuration (Spring Cloud Config)
 
 ---
-
-### 3. UI Implementation
-
-A frontend application will be developed to interact with the backend services.
-
-Planned features:
-- Order creation UI
-- Order status tracking
-- Inventory availability display
-- Notification updates
-
-The UI will communicate with the backend through the **API Gateway**.
-
----
-
-### 4. Additional Enhancements
-
-Future improvements may also include:
-
-- Docker containerization
-- Kafka monitoring
-- Distributed logging
-- Circuit breaker pattern
-- Centralized configuration
 
 ## Author
 
-
-Tanvir Pirjada  
-Java Backend Developer
+**Mohammed Tanvir**
+Java Full Stack Developer
+[GitHub](https://github.com/Tanvirpirjada) • [LinkedIn](https://linkedin.com/in/Mohammedtanvir)
